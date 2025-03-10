@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../services/auth.dart';
+import 'package:flutter_application_1/services/auth.dart';
 
-class SignIn extends StatefulWidget {
+
+class Register extends StatefulWidget {
+  const Register({super.key});
+
   @override
-  _SignInState createState() => _SignInState();
+  State<Register> createState() => _RegisterState();
 }
 
-class _SignInState extends State<SignIn> {
-  final AuthService _auth = AuthService(); 
+class _RegisterState extends State<Register> {
+
+  final AuthService _auth = AuthService();
 
   String email = '';
   String password = '';
@@ -19,7 +23,7 @@ class _SignInState extends State<SignIn> {
       appBar: AppBar(
         backgroundColor: Colors.brown[400],
         elevation: 0.0,
-        title: Text('Sign in to Perpetual Motion'),
+        title: Text('Sign up to Perpetual Motion'),
       ),
       body: Container(
         padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
@@ -46,7 +50,7 @@ class _SignInState extends State<SignIn> {
                 foregroundColor: WidgetStateProperty.all(Colors.white), 
               ),
               child: Text(
-                'Sign in',
+                'Register',
                 style: TextStyle(color: Colors.white
                 ),
               ),
@@ -60,6 +64,5 @@ class _SignInState extends State<SignIn> {
         ),
       ),
       );
-    
   }
 }

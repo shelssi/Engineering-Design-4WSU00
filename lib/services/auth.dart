@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/models/user.dart';
 
 
 /*
@@ -10,6 +11,16 @@ class AuthService {
   // private (_)
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  // create MyUser obj based on FirebaseUser
+  MyUser? _userFromFirebaseUser(User? user) {
+    return user != null ? MyUser(uid: user.uid) : null;
+  }
+
+  // set authentication stream, make Flutter monitor the change of fiebase authentication
+  Stream<MyUser?> get user {
+    return _auth.authStateChanges().map((User? user) => _userFromFirebaseUser(user));
+  }
+
   // sign in anon
   Future signInAnon() async {
     try {
@@ -17,7 +28,7 @@ class AuthService {
       // FirebaseUser has been renamed to User
       UserCredential userCre = await _auth.signInAnonymously();
       User? user = userCre.user;
-      return user;
+      return _userFromFirebaseUser(user!);
     } catch(e) {
       print(e.toString());
       return null;
@@ -105,7 +116,13 @@ class AuthService {
 }
 
   // Sign out
-  Future<void> logout() async {
-    await _auth.signOut();
+  Future signOut()
+   async {
+    try {
+      return await _auth.signOut();
+    } catch(e) {
+      print(e.toString());
+      return null;
+    }
   }
 }
