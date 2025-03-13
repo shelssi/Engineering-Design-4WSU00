@@ -10,9 +10,10 @@ import 'package:flutter_application_1/services/auth.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();  
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp();
+   // options: DefaultFirebaseOptions.currentPlatform,
+  print("Firebase initialized successfully");
+
   runApp(
     MyApp()
   );
