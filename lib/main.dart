@@ -12,11 +12,8 @@ void main() async{
   WidgetsFlutterBinding.ensureInitialized();  
   await Firebase.initializeApp();
    // options: DefaultFirebaseOptions.currentPlatform,
-  print("Firebase initialized successfully");
-
-  runApp(
-    MyApp()
-  );
+  //print("Firebase initialized successfully");
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

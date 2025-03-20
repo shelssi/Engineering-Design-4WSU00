@@ -1,8 +1,10 @@
-
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/managers/FirebaseManager.dart';  // 导入 FirebaseManager
+import 'package:flutter_application_1/models/user.dart';
+import 'package:flutter_application_1/screens/authenticate/authenticate.dart';
 import 'package:flutter_application_1/services/auth.dart';
 
 class Home extends StatefulWidget {
@@ -13,30 +15,48 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final FirebaseManager _firebaseManager = FirebaseManager();
   final AuthService _auth = AuthService();
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   bool valveState = false;
   bool heatingElementState = false;
-  double temperatureC = 25.0;
-  String user = "user1";  // 数据库路径中的用户
+  double temperatureC = 0.0;
+  String? user;  // the user in the database path
 
   @override
   void initState() {
     super.initState();
-    print("Current user: ${_auth.user}");
-    _listenToTemperature();  // 监听温度数据
-    _listenToValveState();  // 监听阀门状态
-    _listenToHeatingElementState();  // 监听加热元件状态
+    _initializeUser();
+    _listenToTemperature();  
+    _listenToValveState();  
+    _listenToHeatingElementState();  
+  }
+
+  _initializeUser() async {
+    User? currentUser = _firebaseAuth.currentUser;
+    if (currentUser == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => Authenticate()),
+      );
+    } else {
+      setState(() {
+        user = currentUser.uid;
+      });
+      print("Current user UID: $user");
+      MyUser myUser = MyUser(uid: currentUser.uid, email: currentUser.email);
+      await _firebaseManager.initializeUserData(user!, myUser);
+    }
   }
 
   // Listen to temperature data changes
   _listenToTemperature() {
-    _firebaseManager.listenToTemperature(user).listen((DatabaseEvent event) {
+    if (user == null) return;
+    _firebaseManager.listenToTemperature(user!).listen((DatabaseEvent event) {
       final tempValue = event.snapshot.value;
       if (tempValue != null) {
         setState(() {
-          //print(temperatureC);
-          temperatureC = tempValue.toString() as double;
-          //print(temperatureC);
+          temperatureC = (tempValue is num) ? tempValue.toDouble() : double.tryParse(tempValue.toString()) ?? 0.0;
+          print("Temperature updated: $temperatureC");          
         });
       }
     });
@@ -44,7 +64,8 @@ class _HomeState extends State<Home> {
 
   // Listen to valve state changes
   _listenToValveState() {
-    _firebaseManager.listenToValveState(user).listen((event) {
+    if (user == null) return;
+    _firebaseManager.listenToValveState(user!).listen((event) {
       final snapshot = event.snapshot;
       if (snapshot.value != null) {
         setState(() {
@@ -56,7 +77,8 @@ class _HomeState extends State<Home> {
 
   // Listen to heating element state changes
   _listenToHeatingElementState() {
-    _firebaseManager.listenToHeatingElementState(user).listen((event) {
+    if (user == null) return;
+    _firebaseManager.listenToHeatingElementState(user!).listen((event) {
       final snapshot = event.snapshot;
       if (snapshot.value != null) {
         setState(() {
@@ -66,34 +88,13 @@ class _HomeState extends State<Home> {
     });
   }
 
-  // // Upload temperature data
-  // _uploadTemperature(double temperature) async {
-  //   await _firebaseManager.uploadTemperature(user, temperature);
-  // }
-
-  // // Upload valve state
-  // _uploadValveState(bool state) async {
-  //   await _firebaseManager.uploadValveState(user, state);
-  // }
-
-  // // Upload heating element state
-  // _uploadHeatingElementState(bool state) async {
-  //   await _firebaseManager.uploadHeatingElementState(user, state);
-  // }
-
-  // @override
-  // void dispose() {
-  //   super.dispose();
-  //   // 关闭监听流
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.brown[50],
       appBar: AppBar(
         title: Text('Perpetual Motion'),
-        backgroundColor: Colors.brown[400],
+        backgroundColor: Colors.red[400],
         elevation: 0.0,
         actions: <Widget>[
           TextButton.icon(
@@ -101,6 +102,14 @@ class _HomeState extends State<Home> {
             label: Text('Log out'),
             onPressed: () async {
               await _auth.signOut();
+              // setState(() {
+              //   user = null;
+              // });
+              // // If log out, navigate to authenticate page
+              // Navigator.pushReplacement(
+              //   context,
+              //   MaterialPageRoute(builder: (context) => Authenticate()),
+              // );
             },
           ),
         ],
@@ -110,10 +119,7 @@ class _HomeState extends State<Home> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              'Temperature: $temperatureC°C',
-              //style: TextStyle(fontSize: 24),
-            ),
+            Text('Temperature: $temperatureC°C',),
             SizedBox(height: 20),
             Text('Valve State: $valveState'),
             SizedBox(height: 20),
@@ -121,11 +127,11 @@ class _HomeState extends State<Home> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-              bool newState = !valveState;
+              bool newValveState = !valveState;
               try {
-                await _firebaseManager.uploadValveState(user, newState);
+                await _firebaseManager.uploadValveState(user!, newValveState);
                 setState(() {
-                  valveState = newState;
+                  valveState = newValveState;
                 });
               } catch (e) {
                 print("Failed to update valve state: $e");
@@ -134,13 +140,18 @@ class _HomeState extends State<Home> {
               child: Text("Toggle Valve State"),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  heatingElementState = !heatingElementState;
-                });
-                _firebaseManager.uploadHeatingElementState(user,heatingElementState);
+              onPressed: () async {
+                bool newHeatingElementState = !heatingElementState;
+                try {
+                  await _firebaseManager.uploadHeatingElementState(user!, newHeatingElementState);
+                  setState(() {
+                    heatingElementState = newHeatingElementState;
+                  });
+                } catch (e) {
+                  print("Failed to update heating element state: $e");
+                }
               },
-              child: Text("Toggle Heating Element State"),
+                child: Text("Toggle Heating Element State"),
             ),
           ],
         ),

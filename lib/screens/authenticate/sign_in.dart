@@ -23,7 +23,7 @@ class _SignInState extends State<SignIn> {
     return Scaffold(
       backgroundColor: Colors.brown[100],
       appBar: AppBar(
-        backgroundColor: Colors.brown[400],
+        backgroundColor: Colors.red[400],
         elevation: 0.0,
         title: Text('Sign in to Perpetual Motion'),
         actions: <Widget>[
@@ -74,7 +74,6 @@ class _SignInState extends State<SignIn> {
                   if (result == null) {
                     setState(() => error = 'Could not sign in with this credential');
                   }
-
                 } 
               }
             ),

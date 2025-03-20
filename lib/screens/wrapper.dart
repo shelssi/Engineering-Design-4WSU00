@@ -17,11 +17,11 @@ class Wrapper extends StatelessWidget {
     print("current user status： $user");
   
     if (user == null) {
+      //print("User is null, showing Authenticate");
       return Authenticate(); // not signed in -> go into Sign In page
     } else {
+      //print("User is signed in, UID: ${user.uid}, showing Home");
       return Home(); // signed in -> into Home page
     }
-  
-    
   }
 }
